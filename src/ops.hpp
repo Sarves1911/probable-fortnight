@@ -12,3 +12,11 @@ FloatTensor fc_linear(
 void relu_inplace(FloatTensor &t);
 
 FloatTensor softmax(const FloatTensor &logits);
+
+FloatTensor maxpool2d(
+    const FloatTensor &input,
+    int channels,
+    int height,
+    int width,
+    int pool_size,
+    int stride);

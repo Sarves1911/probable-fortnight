@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <algorithm>
+#include <limits>
 
 void relu_inplace(Tensor &t)
 {
@@ -92,5 +93,68 @@ FloatTensor softmax(const FloatTensor &logits)
         output.data[i] /= sum;
     }
 
+    return output;
+}
+
+FloatTensor maxpool2d(
+    const FloatTensor &input,
+    int channels,
+    int height,
+    int width,
+    int pool_size,
+    int stride)
+{
+    if (input.numel() != channels * height * width)
+    {
+        throw std::runtime_error("size does not match");
+    }
+    if (pool_size <= 0)
+    {
+        throw std::runtime_error("Pool size is less than 0");
+    }
+    if (stride <= 0)
+    {
+        throw std::runtime_error("Stride is less than 0");
+    }
+    if (height < pool_size || width < pool_size)
+    {
+        throw std::runtime_error("Pool size is larger than input dimensions");
+    }
+
+    int out_height = (height - pool_size) / stride + 1;
+    int out_width = (width - pool_size) / stride + 1;
+
+    FloatTensor output;
+    output.shape = {channels, out_height, out_width};
+
+    output.data.resize(channels * out_height * out_width);
+
+    for (int c = 0; c < channels; c++)
+    {
+        for (int oh = 0; oh < out_height; oh++)
+        {
+            for (int ow = 0; ow < out_width; ow++)
+            {
+                float max_value = std::numeric_limits<float>::lowest();
+
+                for (int kh = 0; kh < pool_size; kh++)
+                {
+                    for (int kw = 0; kw < pool_size; kw++)
+                    {
+                        int input_h = oh * stride + kh;
+                        int input_w = ow * stride + kw;
+
+                        int input_index = c * height * width + input_h * width + input_w;
+
+                        max_value = std::max(max_value, input.data[input_index]);
+                    }
+                }
+
+                int output_index = c * out_height * out_width + oh * out_width + ow;
+
+                output.data[output_index] = max_value;
+            }
+        }
+    }
     return output;
 }
