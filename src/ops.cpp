@@ -12,6 +12,17 @@ void relu_inplace(Tensor &t)
     }
 }
 
+void relu_inplace(FloatTensor &t)
+{
+    for (auto &value : t.data)
+    {
+        if (value < 0.0f)
+        {
+            value = 0.0f;
+        }
+    }
+}
+
 FloatTensor fc_linear(const FloatTensor &input, const Tensor &weight, const FloatTensor &bias)
 {
     if (weight.shape.size() != 2)
