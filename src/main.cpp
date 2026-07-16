@@ -1,6 +1,7 @@
 #include <iostream>
+#include <exception>
+
 #include "loader.hpp"
-#include "ops.hpp"
 
 int main(int argc, char **argv)
 {
@@ -12,9 +13,9 @@ int main(int argc, char **argv)
 
     try
     {
-        Tensor t = load_tensor_i8(argv[1], argv[2]);
+        FloatTensor t = load_tensor_f32(argv[1], argv[2]);
 
-        std::cout << "Loaded tensor\n";
+        std::cout << "Loaded FloatTensor\n";
 
         std::cout << "Shape: ";
         for (int dim : t.shape)
@@ -23,22 +24,12 @@ int main(int argc, char **argv)
         }
         std::cout << "\n";
 
-        std::cout << "Scale: " << t.scale << "\n";
-        std::cout << "Zero point: " << t.zero_point << "\n";
+        std::cout << "Num elements: " << t.numel() << "\n";
 
         std::cout << "First 10 values: ";
         for (int i = 0; i < 10 && i < static_cast<int>(t.data.size()); i++)
         {
-            std::cout << static_cast<int>(t.data[i]) << " ";
-        }
-        std::cout << "\n";
-
-        relu_inplace(t);
-
-        std::cout << "First 10 values after ReLU: ";
-        for (int i = 0; i < 10 && i < static_cast<int>(t.data.size()); i++)
-        {
-            std::cout << static_cast<int>(t.data[i]) << " ";
+            std::cout << t.data[i] << " ";
         }
         std::cout << "\n";
     }

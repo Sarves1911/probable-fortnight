@@ -109,3 +109,36 @@ Tensor load_tensor_i8(const std::string &bin_path, const std::string &meta_path)
 
     return tensor;
 }
+
+FloatTensor load_tensor_f32(const std::string &bin_path, const std::string &meta_path)
+{
+    std::string json = read_text_file(meta_path);
+
+    FloatTensor ftensor;
+    ftensor.shape = parse_shape(json);
+
+    int expected_count = ftensor.numel();
+    ftensor.data.resize(expected_count);
+
+    std::ifstream file(bin_path, std::ios::binary);
+
+    if (!file)
+    {
+        throw std::runtime_error("Could not open binary float tensor file: " + bin_path);
+    }
+
+    file.read(reinterpret_cast<char *>(ftensor.data.data()), expected_count * sizeof(float));
+
+    std::streamsize bytes_read = file.gcount();
+    std::streamsize expected_bytes = expected_count * sizeof(float);
+
+    if (bytes_read != expected_bytes)
+    {
+        throw std::runtime_error(
+            "Short read from " + bin_path +
+            ". Expected " + std::to_string(expected_bytes) +
+            " bytes, got " + std::to_string(bytes_read));
+    }
+
+    return ftensor;
+}

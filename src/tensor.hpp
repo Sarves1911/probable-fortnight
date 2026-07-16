@@ -41,3 +41,19 @@ struct Tensor
         return data[index4d(n, c, h, w)];
     }
 };
+
+struct FloatTensor
+{
+    std::vector<int> shape;
+    std::vector<float> data;
+
+    int numel() const
+    {
+        int total = 1;
+        for (int dim : shape)
+        {
+            total *= dim;
+        }
+        return total;
+    }
+};
