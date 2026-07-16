@@ -1,5 +1,7 @@
 #include "ops.hpp"
 #include <stdexcept>
+#include <cmath>
+#include <algorithm>
 
 void relu_inplace(Tensor &t)
 {
@@ -54,6 +56,40 @@ FloatTensor fc_linear(const FloatTensor &input, const Tensor &weight, const Floa
             acc += input.data[j] * real_weight;
         }
         output.data[i] = acc;
+    }
+
+    return output;
+}
+
+FloatTensor softmax(const FloatTensor &logits)
+{
+    if (logits.data.empty())
+    {
+        throw std::runtime_error("softmax received empty logits");
+    }
+
+    FloatTensor output;
+    output.shape = logits.shape;
+    output.data.resize(logits.data.size());
+
+    float max_val = *std::max_element(logits.data.begin(), logits.data.end());
+
+    float sum = 0.0f;
+
+    for (int i = 0; i < static_cast<int>(logits.data.size()); i++)
+    {
+        output.data[i] = std::exp(logits.data[i] - max_val);
+        sum += output.data[i];
+    }
+
+    if (sum == 0.0f)
+    {
+        throw std::runtime_error("softmax sum is zero");
+    }
+
+    for (int i = 0; i < static_cast<int>(output.data.size()); i++)
+    {
+        output.data[i] /= sum;
     }
 
     return output;

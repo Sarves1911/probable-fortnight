@@ -10,3 +10,5 @@ FloatTensor fc_linear(
     const FloatTensor &bias);
 
 void relu_inplace(FloatTensor &t);
+
+FloatTensor softmax(const FloatTensor &logits);
