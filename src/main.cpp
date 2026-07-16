@@ -1,5 +1,6 @@
 #include <iostream>
 #include "loader.hpp"
+#include "ops.hpp"
 
 int main(int argc, char **argv)
 {
@@ -26,6 +27,15 @@ int main(int argc, char **argv)
         std::cout << "Zero point: " << t.zero_point << "\n";
 
         std::cout << "First 10 values: ";
+        for (int i = 0; i < 10 && i < static_cast<int>(t.data.size()); i++)
+        {
+            std::cout << static_cast<int>(t.data[i]) << " ";
+        }
+        std::cout << "\n";
+
+        relu_inplace(t);
+
+        std::cout << "First 10 values after ReLU: ";
         for (int i = 0; i < 10 && i < static_cast<int>(t.data.size()); i++)
         {
             std::cout << static_cast<int>(t.data[i]) << " ";
