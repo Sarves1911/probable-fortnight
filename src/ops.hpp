@@ -20,3 +20,12 @@ FloatTensor maxpool2d(
     int width,
     int pool_size,
     int stride);
+
+FloatTensor conv2d(
+    const FloatTensor &input,
+    const Tensor &weight,
+    const FloatTensor &bias,
+    int in_channels,
+    int height,
+    int width,
+    int stride);

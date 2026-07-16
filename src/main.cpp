@@ -30,14 +30,33 @@ int main()
     try
     {
         FloatTensor input;
-        input.shape = {1, 4, 4};
+        input.shape = {1, 3, 3};
         input.data = {
-            1, 2, 3, 4,
-            5, 6, 7, 8,
-            9, 10, 11, 12,
-            13, 14, 15, 16};
+            1, 2, 3,
+            4, 5, 6,
+            7, 8, 9};
 
-        FloatTensor output = maxpool2d(input, 1, 4, 4, 2, 2);
+        Tensor weight;
+        weight.shape = {1, 1, 2, 2};
+        weight.data = {
+            1, 1,
+            1, 1};
+        weight.scale = 1.0f;
+        weight.zero_point = 0;
+
+        FloatTensor bias;
+        bias.shape = {1};
+        bias.data = {0.0f};
+
+        FloatTensor output = conv2d(
+            input,
+            weight,
+            bias,
+            1, // in_channels
+            3, // height
+            3, // width
+            1  // stride
+        );
 
         std::cout << "Input:\n";
         print_tensor_3d(input);

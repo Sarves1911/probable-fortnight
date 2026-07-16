@@ -158,3 +158,98 @@ FloatTensor maxpool2d(
     }
     return output;
 }
+
+FloatTensor conv2d(
+    const FloatTensor &input,
+    const Tensor &weight,
+    const FloatTensor &bias,
+    int in_channels,
+    int height,
+    int width,
+    int stride)
+{
+    if (weight.shape.size() != 4)
+    {
+        throw std::runtime_error("conv2d expects weight to be 4D");
+    }
+
+    if (stride <= 0)
+    {
+        throw std::runtime_error("conv2d stride must be positive");
+    }
+
+    int out_channels = weight.shape[0];
+    int weight_in_channels = weight.shape[1];
+    int kernel_height = weight.shape[2];
+    int kernel_width = weight.shape[3];
+
+    if (weight_in_channels != in_channels)
+    {
+        throw std::runtime_error("conv2d input channels do not match weight channels");
+    }
+
+    if (input.numel() != in_channels * height * width)
+    {
+        throw std::runtime_error("conv2d input size does not match channels * height * width");
+    }
+
+    if (bias.numel() != out_channels)
+    {
+        throw std::runtime_error("conv2d bias size does not match output channels");
+    }
+
+    if (height < kernel_height || width < kernel_width)
+    {
+        throw std::runtime_error("conv2d kernel is larger than input");
+    }
+
+    int out_height = (height - kernel_height) / stride + 1;
+    int out_width = (width - kernel_width) / stride + 1;
+
+    FloatTensor output;
+    output.shape = {out_channels, out_height, out_width};
+    output.data.resize(out_channels * out_height * out_width);
+
+    for (int oc = 0; oc < out_channels; oc++)
+    {
+        for (int oh = 0; oh < out_height; oh++)
+        {
+            for (int ow = 0; ow < out_width; ow++)
+            {
+                float acc = bias.data[oc];
+
+                for (int ic = 0; ic < in_channels; ic++)
+                {
+                    for (int kh = 0; kh < kernel_height; kh++)
+                    {
+                        for (int kw = 0; kw < kernel_width; kw++)
+                        {
+                            int ih = oh * stride + kh;
+                            int iw = ow * stride + kw;
+
+                            int input_index =
+                                ic * height * width + ih * width + iw;
+
+                            int weight_index =
+                                oc * in_channels * kernel_height * kernel_width + ic * kernel_height * kernel_width + kh * kernel_width + kw;
+
+                            int8_t q_weight = weight.data[weight_index];
+
+                            float real_weight =
+                                (q_weight - weight.zero_point) * weight.scale;
+
+                            acc += input.data[input_index] * real_weight;
+                        }
+                    }
+                }
+
+                int output_index =
+                    oc * out_height * out_width + oh * out_width + ow;
+
+                output.data[output_index] = acc;
+            }
+        }
+    }
+
+    return output;
+}
