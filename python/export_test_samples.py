@@ -20,7 +20,7 @@ def main():
         transform=transform
     )
 
-    num_samples = 100
+    num_samples = 10000
 
     images = []
     labels = []

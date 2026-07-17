@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+#include <chrono>
 
 #include "loader.hpp"
 #include "ops.hpp"
@@ -213,6 +214,7 @@ int main()
         }
 
         int correct = 0;
+        auto t0 = std::chrono::high_resolution_clock::now();
 
         for (int i = 0; i < num_images; i++)
         {
@@ -235,10 +237,20 @@ int main()
         }
 
         float accuracy = static_cast<float>(correct) / static_cast<float>(num_images);
+        auto t1 = std::chrono::high_resolution_clock::now();
+
+        double total_ms =
+            std::chrono::duration<double, std::milli>(t1 - t0).count();
+
+        double ms_per_image = total_ms / num_images;
+        double images_per_second = 1000.0 / ms_per_image;
 
         std::cout << "\n";
         std::cout << "Correct: " << correct << " / " << num_images << "\n";
         std::cout << "Accuracy: " << accuracy * 100.0f << "%\n";
+        std::cout << "Total inference time: " << total_ms << " ms\n";
+        std::cout << "Latency: " << ms_per_image << " ms/image\n";
+        std::cout << "Throughput: " << images_per_second << " images/sec\n";
     }
     catch (const std::exception &e)
     {
