@@ -5,10 +5,10 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
-#include <chrono>
 
 #include "loader.hpp"
 #include "ops.hpp"
+#include "benchmark.hpp"
 
 struct Model
 {
@@ -34,12 +34,6 @@ static FloatTensor flatten(const FloatTensor &input)
     output.shape = {input.numel()};
     output.data = input.data;
     return output;
-}
-
-static int argmax(const FloatTensor &t)
-{
-    return static_cast<int>(
-        std::max_element(t.data.begin(), t.data.end()) - t.data.begin());
 }
 
 static std::vector<float> read_float_file(const std::string &path)
@@ -218,34 +212,39 @@ int main(int argc, char *argv[])
         if (static_cast<int>(labels.size()) < num_images)
             throw std::runtime_error("Not enough labels for images");
 
-        int correct = 0;
-        auto t0 = std::chrono::high_resolution_clock::now();
+        BenchmarkResult result = run_inference_benchmark(
+            num_images,
+            labels,
+            [&](int i)
+            {
+                return get_image(images, i);
+            },
+            [&](const FloatTensor &image)
+            {
+                return forward(model, image);
+            },
+            50);
 
-        for (int i = 0; i < num_images; i++)
+        print_benchmark_result(result);
+
+        if (verbose)
         {
-            FloatTensor image = get_image(images, i);
-            FloatTensor probs = forward(model, image);
-            int pred = argmax(probs);
-            int label = static_cast<int>(labels[i]);
+            std::cout << "\nPer-sample predictions:\n";
 
-            if (pred == label)
-                correct++;
+            for (int i = 0; i < num_images; i++)
+            {
+                FloatTensor image = get_image(images, i);
+                FloatTensor probs = forward(model, image);
 
-            if (verbose)
-                std::cout << "sample " << i << " pred=" << pred << " label=" << label << "\n";
+                int pred = argmax_tensor(probs);
+                int label = static_cast<int>(labels[i]);
+
+                std::cout << "sample " << i
+                          << " pred=" << pred
+                          << " label=" << label
+                          << "\n";
+            }
         }
-
-        auto t1 = std::chrono::high_resolution_clock::now();
-        double total_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
-        double ms_per_image = total_ms / num_images;
-        double images_per_second = 1000.0 / ms_per_image;
-        float accuracy = static_cast<float>(correct) / static_cast<float>(num_images);
-
-        std::cout << "Correct: " << correct << " / " << num_images << "\n";
-        std::cout << "Accuracy: " << accuracy * 100.0f << "%\n";
-        std::cout << "Total inference time: " << total_ms << " ms\n";
-        std::cout << "Latency: " << ms_per_image << " ms/image\n";
-        std::cout << "Throughput: " << images_per_second << " images/sec\n";
     }
     catch (const std::exception &e)
     {
