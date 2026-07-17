@@ -196,8 +196,15 @@ static FloatTensor forward(const Model &model, const FloatTensor &input)
     return softmax(fc3_out);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    bool verbose = false;
+    for (int i = 1; i < argc; i++)
+    {
+        if (std::string(argv[i]) == "--verbose")
+            verbose = true;
+    }
+
     try
     {
         Model model = load_model();
@@ -209,9 +216,7 @@ int main()
         int num_images = static_cast<int>(images.size()) / image_size;
 
         if (static_cast<int>(labels.size()) < num_images)
-        {
             throw std::runtime_error("Not enough labels for images");
-        }
 
         int correct = 0;
         auto t0 = std::chrono::high_resolution_clock::now();
@@ -219,33 +224,23 @@ int main()
         for (int i = 0; i < num_images; i++)
         {
             FloatTensor image = get_image(images, i);
-
             FloatTensor probs = forward(model, image);
-
             int pred = argmax(probs);
             int label = static_cast<int>(labels[i]);
 
             if (pred == label)
-            {
                 correct++;
-            }
 
-            std::cout << "sample " << i
-                      << " pred=" << pred
-                      << " label=" << label
-                      << "\n";
+            if (verbose)
+                std::cout << "sample " << i << " pred=" << pred << " label=" << label << "\n";
         }
 
-        float accuracy = static_cast<float>(correct) / static_cast<float>(num_images);
         auto t1 = std::chrono::high_resolution_clock::now();
-
-        double total_ms =
-            std::chrono::duration<double, std::milli>(t1 - t0).count();
-
+        double total_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
         double ms_per_image = total_ms / num_images;
         double images_per_second = 1000.0 / ms_per_image;
+        float accuracy = static_cast<float>(correct) / static_cast<float>(num_images);
 
-        std::cout << "\n";
         std::cout << "Correct: " << correct << " / " << num_images << "\n";
         std::cout << "Accuracy: " << accuracy * 100.0f << "%\n";
         std::cout << "Total inference time: " << total_ms << " ms\n";
